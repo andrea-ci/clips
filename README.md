@@ -15,6 +15,8 @@ Install with *pip*:
 A console with a chained command:
 
 ```
+from clips import ArgParser
+
 # init console
 console = ArgParser(
     'myconsole',                # prog. name
