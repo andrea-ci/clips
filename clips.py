@@ -1,9 +1,9 @@
-from collections import namedtuple
+# -*- coding: utf-8 -*-
 from sys import exit as sys_exit
 import getopt
 
 __all__ = ['ArgParser']
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 # base-section
 BASE = 'BASE'
@@ -24,128 +24,130 @@ background_colors = {
 }
 
 class ClipsError(Exception):
-    """ Simple exception wrapper. """
+    """Simple exception wrapper. """
 
 class TextColor:
-    """ Class for coloring text. """
+    """Class for coloring text. """
     def __init__(self, fg=None, bg=None):
         # set foreground
         if fg:
-            if fg not in foreground_colors.keys():
+            if fg not in foreground_colors:
                 raise ClipsError('Foreground color not suported')
             color_fg = foreground_colors[fg]
         else:
             color_fg = ''
         # set background
         if bg:
-            if bg not in background_colors.keys():
+            if bg not in background_colors:
                 raise ClipsError('Background color not supported')
             color_bg = background_colors[bg]
         else:
             color_bg = ''
-        self.prefix = color_bg+color_fg
+        self.prefix = color_bg + color_fg
         self.reset = '\033[0m' if (fg or bg) else ''
 
     def render(self, text):
-        """ Display text with selected colors. """
-        return '{0}{1}{2}'.format(self.prefix, text, self.reset)
+        """Displays text with selected colors. """
+        return f'{self.prefix}{text}{self.reset}'
 
 class UsageFormatter:
     """ Formatter for usage messages. """
-    def __init__(self,name,description=None,banner=None,title_fg=None,
-        title_bg=None,text_fg=None,text_bg=None,indent=[0]):
+    def __init__(self, name, description=None, banner=None, title_fg=None,
+        title_bg=None, text_fg=None, text_bg=None, indent=[0]):
         self.name = name
         self._description = description
         self._banner = banner
-        self._title_color = TextColor(fg=title_fg,bg=title_bg)
-        self._text_color= TextColor(fg=text_fg,bg=text_bg)
+        self._title_color = TextColor(fg=title_fg, bg=title_bg)
+        self._text_color= TextColor(fg=text_fg, bg=text_bg)
         self.indent = indent
 
     def _usage_string(self,obj,args,opts):
-        """ Prepare usage string. """
-        usage_string = 'usage: '+self.name+' '
-        usage_string += ''.join([cmd+' ' for cmd in obj.chain[1:]])
-        if obj._commands: usage_string += '[command] '
-        if args: usage_string += ' '.join([str(arg) for arg in args])+' '
-        if opts: usage_string += '[options]'
+        """Prepares usage string. """
+        usage_string = 'usage: ' + self.name + ' '
+        usage_string += ''.join([cmd + ' ' for cmd in obj.chain[1:]])
+        if obj._commands:
+            usage_string += '[command] '
+        if args:
+            usage_string += ' '.join([str(arg) for arg in args])+' '
+        if opts:
+            usage_string += '[options]'
+
         return usage_string
 
-    def _group_usage(self,usage_help,title,commands):
-        """ Render the command usage. """
+    def _group_usage(self, usage_help, title, commands):
+        """Renders the command usage. """
         title_color = self._title_color
         text_color = self._text_color
-        off = 4+self.indent[0]
+        off = 4 + self.indent[0]
 
-        usage_help += '\n' + ' '*2 + title_color.render(title)+'\n'
+        usage_help += '\n' + ' '*2 + title_color.render(title) + '\n'
         usage_help += '\n'.join([
-            ' '*4 + text_color.render(str(c)) +
-            ' '*(off-len(str(c))) +
+            ' ' * 4 + text_color.render(str(c)) +
+            ' ' * (off-len(str(c))) +
             (c.help or '')
             for c in commands])
         return usage_help
 
-    def get_usage_help(self,obj):
-        """ Print general help message. """
-        title_color = self._title_color
+    def get_usage_help(self, obj):
+        """ Prints general help message. """
         text_color = self._text_color
-        off = 4+self.indent[0]
 
         # prepare usage string
         usage_help = ''
-        if self._banner: usage_help += text_color.render(self._banner)+'\n'
-        if self._description: usage_help += self._description+'\n'
+        if self._banner: usage_help += text_color.render(self._banner) + '\n'
+        if self._description: usage_help += self._description + '\n'
 
         # unpack positional args and options
         opts = []
         args = []
         for _arg in obj._args:
-            args.append(_arg) if isinstance(_arg,Positional) else opts.append(_arg)
+            args.append(_arg) if isinstance(_arg, Positional) else opts.append(_arg)
 
         # add usage string
-        usage_help += '\n'+self._usage_string(obj,args,opts)+'\n'
+        usage_help += '\n' + self._usage_string(obj, args, opts) + '\n'
 
         # format commands
         commands = obj._commands
         if commands:
-            if len(obj.chain)==1 and obj.sections:
-
+            if len(obj.chain) == 1 and obj.sections:
                 printed = []
                 # section commands
-                for section,command_names in obj.sections.items():
+                for section, command_names in obj.sections.items():
 
                     section_commands = [c for c in commands if c.name in command_names]
                     printed += section_commands
 
-                    usage_help = self._group_usage(usage_help,section,section_commands)
+                    usage_help = self._group_usage(usage_help, section, section_commands)
 
                 # other commands
                 others = set(commands).difference(set(printed))
                 if others:
-                    usage_help = self._group_usage(usage_help,'Other:',others)
+                    usage_help = self._group_usage(usage_help, 'Other:', others)
 
             else:
-                usage_help = self._group_usage(usage_help,'Commands',commands)
+                usage_help = self._group_usage(usage_help, 'Commands', commands)
 
-            usage_help+='\n'
+            usage_help += '\n'
 
         # format options
         if opts:
-            usage_help = self._group_usage(usage_help,'Options',opts)
-            usage_help+='\n'
+            usage_help = self._group_usage(usage_help, 'Options', opts)
+            usage_help += '\n'
 
         # format arguments
         if args:
-            usage_help = self._group_usage(usage_help,'Arguments',args)
-            usage_help+='\n'
+            usage_help = self._group_usage(usage_help, 'Arguments', args)
+            usage_help += '\n'
 
         return usage_help
 
 class Positional:
     """ Class for positional arguments. """
-    __slots__=('name','help')
-    def __init__(self,name,help=None):
-        self.name=name
-        self.help=help
+    __slots__ = ('name', 'help')
+
+    def __init__(self, name, help=None):
+        self.name = name
+        self.help = help
 
     def get_names(self):
         return [self.name]
@@ -155,30 +157,35 @@ class Positional:
 
 class Optional:
     """ Class for optional arguments. """
-    __slots__=('short','long','s_repr','l_repr','valued','help')
-    def __init__(self,short=None,long=None,s_repr='',l_repr='',valued=False,help=None):
-        self.short=short
-        self.long=long
-        self.s_repr=s_repr
-        self.l_repr=l_repr
-        self.valued=valued
-        self.help=help
+    __slots__ = ('short', 'long', 's_repr', 'l_repr', 'valued', 'help', 'default')
+
+    def __init__(self, short=None, long=None, s_repr='', l_repr='',
+        valued=False, help=None, default=None):
+        self.short = short
+        self.long = long
+        self.s_repr = s_repr
+        self.l_repr = l_repr
+        self.valued = valued
+        self.help = help
+        self.default = default
 
     def get_names(self):
-        return [name for name in [self.short,self.long] if name]
+        return [name for name in [self.short, self.long] if name]
 
     def __str__(self):
+        """Provides a string representation of Optional object."""
         if self.short and self.long:
-            s = ','.join([self.short,self.long])
+            s = ','.join([self.short, self.long])
         else:
             s = self.short or self.long
+
         return s
 
 class BaseCommand:
     """ The base command class. Provides API for adding subcommands
     and arguments. """
 
-    def __init__(self,chain,context,indent,help=None,add_help=True):
+    def __init__(self, chain, context, indent, help=None, add_help=True):
         self.chain = chain
         self.context = context
         self.indent=indent
@@ -187,49 +194,58 @@ class BaseCommand:
         self._args = []
 
         if add_help:
-            self.add_argument('-h','--help',help='Show this messsage and exit.')
+            self.add_argument('-h', '--help', help='Show this messsage and exit.')
 
-    def add_command(self,name,help=None):
+    def add_command(self, name, help=None):
         """ Add a chained sub-command. """
         # update context, chain, indent
-        chain = self.chain+[name]
-        self.indent[0] = max(self.indent[0],len(chain[-1]))
-        self.context[name]=False
+        chain = self.chain + [name]
+        self.indent[0] = max(self.indent[0], len(chain[-1]))
+        self.context[name] = False
         # create new command
-        command = Command(chain,self.context,self.indent,help=help)
+        command = Command(chain, self.context, self.indent, help=help)
         self._commands.append(command)
+
         return command
 
-    def add_argument(self,*arg,valued=False,help=None):
+    def add_argument(self, *arg, valued=False, help=None, default=None):
         """ Add a command argument. """
-        token = self._parse_arg(arg,valued,help)
-        for name in token.get_names():
-            self.context[name]=False
-        self._args.append(token)
-        self.indent[0] = max(self.indent[0],len(str(arg)))
-        return
 
-    def _parse_arg(self,arg,valued=False,help=None):
-        """ Parse argument with getopt formatting style. """
-        s_opt=''
-        l_opt=''
-        short=None
-        long=None
+        if valued is False and default and type(default) != bool:
+            raise ClipsError(f'{arg} must have a boolean default value')
+
+        token = self._parse_arg(arg, valued, help, default)
+        for name in token.get_names():
+            self.context[name] = False
+        self._args.append(token)
+        self.indent[0] = max(self.indent[0], len(str(arg)))
+
+    def _parse_arg(self, arg, valued, help, default):
+        """ Parse argument with getopt formatting style and returns a Positional
+        or an Optional object. """
+
+        s_opt = ''
+        l_opt = ''
+        short = None
+        long = None
         for el in arg:
             if el.startswith('-'):
                 # long-option
                 if el.startswith('--'):
                     long = el
                     l_opt = el[2:]
-                    if valued: l_opt+='='
+                    if valued:
+                        l_opt += '='
                 # short-option
                 else:
                     short = el
                     s_opt = el[1:]
-                    if valued: s_opt+=':'
+                    if valued:
+                        s_opt += ':'
             else:
-                return Positional(el,help)
-        return Optional(short,long,s_opt,l_opt,valued,help)
+                return Positional(el, help)
+
+        return Optional(short, long, s_opt, l_opt, valued, help, default)
 
 
 class Command(BaseCommand):
@@ -246,61 +262,77 @@ class ArgParser(BaseCommand):
     """ Main class for CLI. Commands can be grouped by sections and
     chained together. Arguments can be positional or optional (flags)."""
 
-    def __init__(self,name,banner=None,description=None,add_help=True,
-        title_fg=None,title_bg=None,text_fg=None,text_bg=None):
+    def __init__(self, name, banner=None, description=None, add_help=True,
+        title_fg=None, title_bg=None, text_fg=None, text_bg=None):
 
         self.name = name
         self._add_help = add_help
         self.sections = {}
-        self.curr_section=None
+        self.curr_section = None
 
         # text indentation
         indent = [0]
 
         # init usage formatter
-        self.usage_formatter = UsageFormatter(name,description=description,
-            banner=banner,title_fg=title_fg,title_bg=title_bg,
-            text_fg=text_fg,text_bg=text_bg,indent=indent)
+        self.usage_formatter = UsageFormatter(name, description=description,
+            banner=banner, title_fg=title_fg, title_bg=title_bg,
+            text_fg=text_fg, text_bg=text_bg, indent=indent)
 
-        super().__init__([BASE],{},indent,help=help,add_help=add_help)
+        super().__init__([BASE], {}, indent, help=help, add_help=add_help)
 
     def add_section(self,name):
         """ Add a section for next commands. """
         self.sections[name] = []
-        self.curr_section=name
+        self.curr_section = name
 
-    def add_command(self,name,help=None):
+    def add_command(self, name, help=None):
         """ Add a new subcommand. """
         if self.curr_section:
             self.sections[self.curr_section].append(name)
-        return super().add_command(name,help=help)
+        return super().add_command(name, help=help)
 
-    def parse_args(self,args):
-        """ Parse commands and arguments and returns the user context. """
-        assert isinstance(args,list)
+    def parse_args(self, args):
+        """ Parse commands and arguments and returns the user context. Context
+        is a dict with arguments (positional and/or optional) defined for
+        specified command."""
 
-        obj,context = self._strip_args(args)
+        obj, context = self._strip_args(args)
 
         # command arguments
-        cmd_args = [tok.name for tok in obj._args if isinstance(tok,Positional)]
+        cmd_args = [tok.name for tok in obj._args if isinstance(tok, Positional)]
 
         # prepare getopt
-        options = [tok for tok in obj._args if isinstance(tok,Optional)]
+        options = [tok for tok in obj._args if isinstance(tok, Optional)]
+
+        # assign default values to context
+        for opt in options:
+            if opt.short:
+                context[opt.short] = opt.default
+            if opt.long:
+                context[opt.long] = opt.default
+
         shortopts = ''.join([opt.s_repr for opt in options])
         longopts = [opt.l_repr for opt in options]
 
         # parse arguments
         try:
-            optlist,args = getopt.gnu_getopt(args,shortopts,longopts)
+            optlist, args = getopt.gnu_getopt(args, shortopts, longopts)
         except getopt.GetoptError as ge:
             raise ClipsError(str(ge))
 
-        # flag options
+        # assign options to context
         for opt in optlist:
+
+            for opt_obj in options:
+                if opt[0] == opt_obj.short or opt[0] == opt_obj.long:
+                    break
+
             if opt[1]:
-                context[opt[0]]=opt[1]
+                context[opt_obj.short] = opt[1]
+                context[opt_obj.long] = opt[1]
             else:
-                context[opt[0]]=True
+                context[opt_obj.short] = True
+                context[opt_obj.long] = True
 
         # help hook
         if self._add_help and (context['-h'] or context['--help']):
@@ -310,37 +342,37 @@ class ArgParser(BaseCommand):
         # arg checking
         num_passed_args = len(args)
         num_cmd_args = len(cmd_args)
-        if num_passed_args==num_cmd_args:
-            # assign arguments
-            for ii,cmd_arg in enumerate(cmd_args):
-                context[cmd_arg]=args[ii]
-        elif num_cmd_args>num_passed_args:
-            raise ClipsError('Missing required argument: \'{0}\''.format(cmd_args[num_passed_args]))
+        if num_passed_args == num_cmd_args:
+            # assign arguments to context
+            for ii, cmd_arg in enumerate(cmd_args):
+                context[cmd_arg] = args[ii]
+        elif num_cmd_args > num_passed_args:
+            raise ClipsError(f'Missing required argument: \'{cmd_args[num_passed_args]}\'')
         else:
-            raise ClipsError('Unknown argument: \'{0}\''.format(args[num_cmd_args]))
+            raise ClipsError(f'Unknown argument: \'{args[num_cmd_args]}\'')
 
         return context
 
-    def _strip_args(self,args):
+    def _strip_args(self, args):
 
         context = self.context.copy()
 
-        obj=self
+        obj = self
         chain = [BASE]
 
         command_names = [cmd.name for cmd in self._commands]
         while args and command_names and args[0] in command_names:
             # strip command
-            arg=args.pop(0)
-            context[arg]=True
-            obj=obj._commands[command_names.index(arg)]
+            arg = args.pop(0)
+            context[arg] = True
+            obj = obj._commands[command_names.index(arg)]
             commands = obj._commands
             command_names = [cmd.name for cmd in commands]
             chain.append(arg)
 
-        return obj,context
+        return obj, context
 
-    def usage_help(self,args=[]):
+    def usage_help(self, args=[]):
 
-        obj,_ = self._strip_args(args)
+        obj, _ = self._strip_args(args)
         return self.usage_formatter.get_usage_help(obj)

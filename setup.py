@@ -1,26 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from setuptools import setup
 from os import path as os_path
+from setuptools import setup
+
+# Package meta-data.
+NAME = 'clips'
+DESCRIPTION = 'Parser for command-line applications.'
+URL = 'https://github.com/acapitanelli/clips'
+AUTHOR = 'Andrea Capitanelli'
+EMAIL = 'andrea@capitanelli.gmail.com'
+VERSION = '1.1.0'
 
 # short/long description
-short_desc = 'Parser for command-line applications'
 here = os_path.abspath(os_path.dirname(__file__))
 try:
-    with open(os_path.join(here,'README.md'),'r',encoding='utf-8') as f:
-        long_desc = '\n' + f.read()
+    with open(os_path.join(here, 'README.md'), 'r', encoding='utf-8') as file:
+        long_desc = '\n' + file.read()
 except FileNotFoundError:
-    long_desc = short_desc
+    long_desc = DESCRIPTION
 
 setup(
-    name='clips',
-    version='1.0.0',
-    description=short_desc,
-    author='andrea capitanelli',
-    author_email='andrea.capitanelli@gmail.com',
-    maintainer='andrea capitanelli',
-    maintainer_email='andrea.capitanelli@gmail.com',
-    url='https://github.com/acapitanelli/clips',
+    name=NAME,
+    version=VERSION,
+    description=DESCRIPTION,
+    author=AUTHOR,
+    author_email=EMAIL,
+    maintainer=NAME,
+    maintainer_email=EMAIL,
+    url=URL,
     py_modules=['clips'],
     long_description=long_desc,
     long_description_content_type='text/markdown',

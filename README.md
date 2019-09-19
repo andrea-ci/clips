@@ -25,23 +25,23 @@ console = ArgParser(
 )
 
 # add a console-level argument
-console.add_argument('-v','--version',help='Show version')
+console.add_argument('-v', '--version', help='Show version')
 
 # add a console command
-cmd = console.add_command('command',help='A command')
+cmd = console.add_command('command', help='A command')
 
 # add a subcommand
-subcmd = cmd.add_command('subcommand',help='A subcommand')
+subcmd = cmd.add_command('subcommand', help='A subcommand')
 
 # add an argument to subcommand
-subcmd.add_argument('arg',help='Argument for this subcommand')
+subcmd.add_argument('arg', help='Argument for this subcommand')
 ```
 
 Parsing method returns a dictionary of user context,
 
 ```
 # parse arguments
-args = console.parse_args(['command','subcommand','this'])
+args = console.parse_args(['command', 'subcommand', 'this'])
 print(args)
 ```
 
@@ -59,6 +59,12 @@ so that output is:
 }
 ```
 
+Argument can have default values:
+
+```
+console.add_argument('-o', '--opt', valued=True, default=10)
+```
+
 To display usage help:
 
 ```
@@ -67,7 +73,7 @@ print(console.usage_help())
 
 # command-level usage
 print(console.usage_help(['command']))
-print(console.usage_help(['command','subcommand']))
+print(console.usage_help(['command', 'subcommand']))
 
 ```
 

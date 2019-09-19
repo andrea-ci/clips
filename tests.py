@@ -32,7 +32,7 @@ class TestClips(unittest.TestCase):
 
         console = clips.ArgParser('test')
         console.add_argument('-o','--opt')
-        console.add_argument('-a',)
+        console.add_argument('-a')
 
         # no opt
         args = console.parse_args([])
@@ -47,22 +47,40 @@ class TestClips(unittest.TestCase):
 
         args = console.parse_args(['-o'])
         self.assertTrue(args['-o'])
-        self.assertFalse(args['--opt'])
+        self.assertTrue(args['--opt'])
 
         # long
         args = console.parse_args(['--opt'])
-        self.assertFalse(args['-o'])
+        self.assertTrue(args['-o'])
         self.assertTrue(args['--opt'])
 
         # valued
         console = clips.ArgParser('test')
-        console.add_argument('-a','--alpha',valued=True)
+        console.add_argument('-a', '--alpha', valued=True)
         args = console.parse_args([])
         self.assertFalse(args['-a'])
         args = console.parse_args(['-a10'])
-        self.assertEqual(args['-a'],'10')
+        self.assertEqual(args['-a'], '10')
         args = console.parse_args(['--alpha=10'])
-        self.assertEqual(args['--alpha'],'10')
+        self.assertEqual(args['--alpha'], '10')
+
+    def test_opt_with_default(self):
+
+        console = clips.ArgParser('test')
+        console.add_argument('-o','--opt', valued=True, default=10)
+        console.add_argument('-a')
+
+        args = console.parse_args(['-a', '-o', '20'])
+        self.assertEqual(args['-o'], '20')
+        self.assertEqual(args['--opt'], '20')
+
+        args = console.parse_args(['-a', '-o20'])
+        self.assertEqual(args['-o'], '20')
+        self.assertEqual(args['--opt'], '20')
+
+        args = console.parse_args(['-a', '--opt=20'])
+        self.assertEqual(args['-o'], '20')
+        self.assertEqual(args['--opt'], '20')
 
 
     def test_simple_mixed_args(self):
@@ -77,11 +95,11 @@ class TestClips(unittest.TestCase):
         self.assertTrue(args['arg'])
         self.assertFalse(args['-o'])
 
-        args = console.parse_args(['arg','-o'])
+        args = console.parse_args(['arg', '-o'])
         self.assertTrue(args['arg'])
         self.assertTrue(args['-o'])
 
-        args = console.parse_args(['-o','arg'])
+        args = console.parse_args(['-o', 'arg'])
         self.assertTrue(args['arg'])
         self.assertTrue(args['-o'])
 
@@ -89,26 +107,26 @@ class TestClips(unittest.TestCase):
 
         console = clips.ArgParser('test')
         console.add_argument('arg1')
-        console.add_argument('-a','--alpha')
+        console.add_argument('-a', '--alpha')
 
         cmd = console.add_command('cmd')
         cmd.add_argument('arg2')
-        cmd.add_argument('-a','--alpha')
+        cmd.add_argument('-a', '--alpha')
 
         args = console.parse_args(['arg'])
-        self.assertEqual(args['arg1'],'arg')
+        self.assertEqual(args['arg1'], 'arg')
         self.assertFalse(args['cmd'])
         self.assertFalse(args['-a'])
         self.assertFalse(args['--alpha'])
 
-        self.assertRaises(clips.ClipsError,console.parse_args,[])
+        self.assertRaises(clips.ClipsError, console.parse_args,[])
 
-        args = console.parse_args(['cmd','arg'])
+        args = console.parse_args(['cmd', 'arg'])
         self.assertTrue(args['cmd'])
-        self.assertEqual(args['arg2'],'arg')
+        self.assertEqual(args['arg2'], 'arg')
 
-        args = console.parse_args(['cmd','arg','-a'])
-        self.assertEqual(args['arg2'],'arg')
+        args = console.parse_args(['cmd', 'arg', '-a'])
+        self.assertEqual(args['arg2'], 'arg')
         self.assertTrue(args['cmd'])
         self.assertTrue(args['-a'])
 
@@ -119,19 +137,19 @@ class TestClips(unittest.TestCase):
         cmd2 = cmd1.add_command('cmd2')
 
         cmd2.add_argument('arg2')
-        cmd2.add_argument('-a','--alpha')
+        cmd2.add_argument('-a', '--alpha')
 
         args = console.parse_args(['cmd1'])
         self.assertTrue(args['cmd1'])
         self.assertFalse(args['cmd2'])
 
-        self.assertRaises(clips.ClipsError,console.parse_args,['cmd1','cmd2'])
-        self.assertRaises(clips.ClipsError,console.parse_args,['cmd2'])
+        self.assertRaises(clips.ClipsError,console.parse_args, ['cmd1','cmd2'])
+        self.assertRaises(clips.ClipsError,console.parse_args, ['cmd2'])
 
-        args = console.parse_args(['cmd1','cmd2','arg'])
+        args = console.parse_args(['cmd1', 'cmd2', 'arg'])
         self.assertTrue(args['cmd1'])
         self.assertTrue(args['cmd2'])
-        self.assertEqual(args['arg2'],'arg')
+        self.assertEqual(args['arg2'], 'arg')
 
 
 if __name__ == '__main__':
